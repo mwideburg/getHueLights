@@ -53,8 +53,12 @@ http_response_t response;
 JsonParserStatic<1024, 50> parse1;
 int analogvalue;
 int hue = 8418;
+int count = 0;
+int trigger = 0;
 bool lightStatus = false;
 String last = "null";
+
+
 void setup() {
   // Put initialization like pinMode and begin functions here.
   request.ip = hueIP;
@@ -74,54 +78,71 @@ void setup() {
 // loop() runs over and over again, as quickly as it can execute.
 void loop() {
   // The core of your code will likely live here.
-  analogvalue = analogRead(SENSOR_PIN);
-  lightStatus = false;
-  getLights();
-  
-  Serial.println("HUE DATA");
-  Serial.println(hue);
-  Serial.println();
+    count = 0;
+    analogvalue = analogRead(SENSOR_PIN);
+    lightStatus = false;
+    getLights();
 
-  if (hue == 8418)
-  {
-    return;
-  }else if(lightStatus == true){
-    if (analogvalue >= 8 && analogvalue < 10)
-    {
-      Particle.publish("Dusk");
-      last = "Dusk";
-      String command = "{\"on\": true, \"scene\": \"dpRaqSDvH6m0nx2\", \"transitiontime\": 30}";
-      setHueLights(command);
-    }
-    else if (analogvalue >= 4 && analogvalue < 8)
-    {
-      Particle.publish("Dusk 2");
-      String command = "{\"on\": true, \"scene\": \"O2PwRXlDLslyAId\", \"transitiontime\": 30}";
-      last = "Dusk 2";
+    Serial.println("HUE DATA");
+    Serial.println(hue);
+    Serial.println();
+    Serial.println(lightStatus);
+    count++;
+    Serial.println("count");
+    Serial.println(count);
+    Serial.println("------------------");
 
-      setHueLights(command);
-    }
-    else if (analogvalue <= 2 && analogvalue < 4)
+    if (hue != 8418 && lightStatus == true && trigger >= 3)
     {
-      Particle.publish("Night");
-      String command = "{\"on\": true, \"scene\": \"bbI-AG7rdXVVyxI\", \"transitiontime\": 30}";
-      last = "Night";
-      setHueLights(command);
-    }
-    else if (analogvalue >= 10)
-    {
-      Particle.publish("DAY");
-      //  getHueBedroom(5);
-      String command = "{\"on\": true, \"scene\": \"vYmauYCRgzUFz3-\", \"transitiontime\": 30}";
-      last = "Day";
-      setHueLights(command);
+      if (analogvalue >= 8 && analogvalue < 10)
+        {
+          Particle.publish("Dusk");
+          last = "Dusk";
+          String command = "{\"on\": true, \"scene\": \"dpRaqSDvH6m0nx2\", \"transitiontime\": 30}";
+          setHueLights(command);
+        }
+        else if (analogvalue >= 4 && analogvalue < 8)
+        {
+          Particle.publish("Dusk 2");
+          String command = "{\"on\": true, \"scene\": \"O2PwRXlDLslyAId\", \"transitiontime\": 30}";
+          last = "Dusk 2";
+
+          setHueLights(command);
+        }
+        else if (analogvalue <= 2 && analogvalue < 4)
+        {
+          Particle.publish("Night");
+          String command = "{\"on\": true, \"scene\": \"bbI-AG7rdXVVyxI\", \"transitiontime\": 30}";
+          last = "Night";
+          setHueLights(command);
+        }
+        else if (analogvalue >= 10)
+        {
+          Particle.publish("DAY");
+          //  getHueBedroom(5);
+          String command = "{\"on\": true, \"scene\": \"vYmauYCRgzUFz3-\", \"transitiontime\": 30}";
+          last = "Day";
+          setHueLights(command);
+        }
+        trigger = 0;
     }
     
+    Serial.println("------------------");
+    Serial.println("This is main loop");
+    Serial.println(lightStatus);
+    count++;
+    Serial.println("count");
+    Serial.println(count);
+    Serial.println("------------------");
+    delay(500);
+    if (trigger > 3)
+    {
+      trigger = 0;
+    }
+    trigger ++;
+    
+  
   }
-
-  delay(2000);
-}
-
 
 void getLights(){
   request.path = "/api/" + API_USERNAME + BEDROOM_PATH;
@@ -129,12 +150,25 @@ void getLights(){
   http.get(request, response, headers);
   String data = response.body.c_str();
   Serial.println("Full Data");
+  Serial.println(lightStatus);
   Serial.println(data);
   Serial.println();
+  count ++;
+  Serial.println("count");
+  Serial.println(count);
+  Serial.println("------------------");
   int pos = data.indexOf("h") + 5;
 
   hue = data.substring(pos, pos + 4).toInt();
+  
+  delay(1000);
   lightStatus = true;
+  Serial.println("2 seconds");
+  Serial.println(lightStatus);
+  count++ ;
+  Serial.println("count");
+  Serial.println(count);
+  Serial.println("------------------");
 }
 
 void setHueLights(String command){
